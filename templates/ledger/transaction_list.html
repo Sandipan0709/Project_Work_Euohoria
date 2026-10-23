@@ -1,0 +1,58 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Transactions{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Transactions</h1><p>{{ summary.count }} shown · income {{ summary.income|inr }} · spending {{ summary.spending|inr }} (transfers excluded, refunds netted)</p></div>
+  <div class="actions"><a class="btn" href="{% url 'transaction_create' %}">Add transaction</a>
+    <a class="btn secondary" href="{% url 'transaction_create' %}?kind=transfer">Add transfer</a>
+    <a class="btn secondary" href="{% url 'import_upload' %}">Import CSV</a>
+    <a class="btn secondary" href="{% url 'export_csv' %}?{{ request.GET.urlencode }}">Export CSV</a></div>
+</div>
+
+{% if not has_accounts %}
+<div class="empty"><p>Add an account before recording transactions.</p><a class="btn" href="{% url 'account_create' %}">Add account</a></div>
+{% else %}
+<form method="get" class="filters" aria-label="Filter transactions">
+  {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+  <div class="actions"><button class="btn small" type="submit">Apply</button>{% if filtered %}<a class="btn small secondary" href="{% url 'transaction_list' %}">Clear</a>{% endif %}</div>
+</form>
+
+{% if page.object_list %}
+<form method="post" action="{% url 'transaction_bulk' %}">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th><input type="checkbox" id="select-all" aria-label="Select all on this page"></th>
+      <th>{% qs_with sort='date' page='' as asc_q %}{% qs_with sort='-date' page='' as desc_q %}<a class="sort-link" href="?{% if request.GET.sort == 'date' %}{{ desc_q }}{% else %}{{ asc_q }}{% endif %}">Date {% if request.GET.sort == 'date' %}↑{% else %}↓{% endif %}</a></th>
+      <th>Details</th><th>Account</th><th>Category</th><th class="right">Amount</th><th></th></tr></thead>
+    <tbody>
+    {% for t in page %}
+      <tr><td><input type="checkbox" name="ids" value="{{ t.id }}" aria-label="Select {{ t.payee|default:t.get_kind_display }} on {{ t.date|idate }}"></td>
+        <td class="num">{{ t.date|idate }}</td>
+        <td>{{ t.payee|default:t.get_kind_display }}{% if t.notes %}<span class="muted small"> · {{ t.notes|truncatechars:40 }}</span>{% endif %}
+            {% if t.tag_list %}<span class="muted small"> · {{ t.tags }}</span>{% endif %}
+            {% if t.kind == 'transfer' %}<span class="kind">Transfer</span>{% elif t.kind == 'refund' %}<span class="kind">Refund</span>{% endif %}</td>
+        <td>{{ t.account }}{% if t.to_account %} → {{ t.to_account }}{% endif %}</td>
+        <td>{% if t.category %}{{ t.category }}{% elif t.kind == 'expense' %}<span class="muted">Uncategorised</span>{% endif %}</td>
+        <td class="num right {% if t.kind == 'expense' %}neg{% elif t.kind == 'income' or t.kind == 'refund' %}pos{% endif %}">{% if t.kind == 'expense' %}−{% elif t.kind == 'income' or t.kind == 'refund' %}+{% endif %}{{ t.amount|inr }}</td>
+        <td class="num"><a href="{% url 'transaction_update' t.id %}?next={{ request.get_full_path|urlencode }}">Edit</a> · <a href="{% url 'transaction_delete' t.id %}?next={{ request.get_full_path|urlencode }}">Delete</a></td></tr>
+    {% endfor %}
+    </tbody></table></div>
+  <div class="actions" style="margin-top:var(--s3)">
+    <label class="small" for="bulk-action">With selected:</label>
+    <select id="bulk-action" name="action" style="width:auto"><option value="">Choose…</option><option value="categorise">Set category</option><option value="delete">Delete</option></select>
+    <select name="category" style="width:auto" aria-label="Category to apply"><option value="">Category…</option>{% for c in categories %}<option value="{{ c.id }}">{{ c }}</option>{% endfor %}</select>
+    <button class="btn small secondary" type="submit">Apply</button>
+  </div>
+</form>
+<div class="pager"><span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  <span class="actions">{% if page.has_previous %}<a class="btn small secondary" href="?{% qs_with page=page.previous_page_number %}">Previous</a>{% endif %}
+  {% if page.has_next %}<a class="btn small secondary" href="?{% qs_with page=page.next_page_number %}">Next</a>{% endif %}</span></div>
+{% elif filtered %}
+<div class="empty"><p>No transactions match these filters.</p><a class="btn secondary" href="{% url 'transaction_list' %}">Clear filters</a></div>
+{% else %}
+<div class="empty"><p>No transactions yet. Record one by hand, or import a bank statement CSV and review it before anything is saved.</p>
+  <a class="btn" href="{% url 'transaction_create' %}">Add transaction</a> <a class="btn secondary" href="{% url 'import_upload' %}">Import CSV</a></div>
+{% endif %}
+{% endif %}
+{% endblock %}

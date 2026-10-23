@@ -1,0 +1,19 @@
+<a class="brand" href="{% url 'dashboard' %}">
+  <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#0369A1"/><path d="M6 17V11M12 17V7M18 17V13" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/></svg>
+  FinTrackr
+</a>
+{% for group, links in nav_groups %}
+  <h2>{{ group }}</h2>
+  {% for name, label in links %}
+    <a class="link" href="{% url name %}" {% if current_url_name == name %}aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+{% endfor %}
+<div class="foot">
+  <a class="link" href="{% url 'notification_list' %}" {% if current_url_name == 'notification_list' %}aria-current="page"{% endif %}>
+    Notifications {% if unread_count %}<span class="count" aria-label="{{ unread_count }} unread">{{ unread_count }}</span>{% endif %}
+  </a>
+  <a class="link" href="{% url 'settings' %}" {% if current_url_name == 'settings' %}aria-current="page"{% endif %}>Settings</a>
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+    <button class="link linkbtn" type="submit" style="padding:6px 8px;text-decoration:none">Sign out ({{ user.username }})</button>
+  </form>
+</div>

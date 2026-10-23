@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block auth %}
+<h1>FinTrackr</h1>
+<p class="tag">Track what you have, what is coming up, and what you can safely spend.</p>
+<div class="panel">
+  <h2 style="margin-bottom:var(--s4)">Sign in</h2>
+  <form method="post" novalidate>{% csrf_token %}
+    {% if form.non_field_errors %}<ul class="errors" role="alert">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul><br>{% endif %}
+    {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+</div>
+<p class="small muted" style="margin-top:var(--s4)">New here? <a href="{% url 'register' %}">Create an account</a>.</p>
+{% endblock %}

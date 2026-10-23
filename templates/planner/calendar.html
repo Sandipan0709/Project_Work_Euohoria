@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Calendar{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ first|date:"F Y" }}</h1><p>Bills, EMIs, expected income and goal dates. Struck-through items are already paid or skipped.</p></div>
+  <div class="actions"><a class="btn secondary" href="?month={{ prev }}&view={{ view }}">← Previous</a><a class="btn secondary" href="?view={{ view }}">Today</a><a class="btn secondary" href="?month={{ next }}&view={{ view }}">Next →</a>
+    <div class="tabs"><a href="?month={{ first.year }}-{{ first.month }}&view=month" {% if view == 'month' %}aria-current="true"{% endif %}>Month</a><a href="?month={{ first.year }}-{{ first.month }}&view=agenda" {% if view == 'agenda' %}aria-current="true"{% endif %}>Agenda</a></div></div></div>
+{% if view == 'month' %}
+<div class="table-wrap"><table class="cal"><thead><tr>{% for d in "MTWTFSS" %}<th scope="col">{{ d }}</th>{% endfor %}</tr></thead><tbody>
+{% for week in weeks %}<tr>{% for day, events, in_month in week %}
+  <td class="{% if not in_month %}out{% endif %} {% if day == today %}today{% endif %}"><span class="d">{{ day.day }}</span>
+    {% for e in events %}<a class="ev {{ e.3 }} {{ e.4 }}" href="{% url e.5 %}" title="{{ e.1 }} {{ e.2|inr }}">{{ e.1 }} {{ e.2|inr0 }}</a>{% endfor %}</td>{% endfor %}</tr>{% endfor %}
+</tbody></table></div>
+{% else %}
+{% for e in entries %}{% ifchanged e.0 %}{% if not forloop.first %}</div>{% endif %}<div class="agenda-day"><strong class="num">{{ e.0|date:"D, j M" }}</strong><div>{% endifchanged %}
+  <div class="actions" style="justify-content:space-between"><a href="{% url e.5 %}" {% if e.4 == 'done' or e.4 == 'skipped' %}style="text-decoration:line-through"{% endif %}>{{ e.1 }}</a>
+    <span class="num {% if e.3 == 'income' %}pos{% endif %}">{{ e.2|inr }} <span class="state {{ e.4 }}">{{ e.4 }}</span></span></div>
+{% if forloop.last %}</div></div>{% endif %}
+{% empty %}<div class="empty"><p>Nothing scheduled this month.</p><a class="btn" href="{% url 'bill_create' %}">Add a bill</a></div>{% endfor %}
+{% endif %}
+{% endblock %}

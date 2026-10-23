@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Can I afford it?{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Can I afford it?</h1>
+  <p>See how a purchase changes your projected balance against your bills, EMIs and buffer, now or later. Nothing here is saved.</p></div></div>
+{% if gaps %}<div class="note"><strong>Treat the result with caution: your records are incomplete.</strong><ul>{% for g in gaps %}<li>{{ g }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="get" class="form-narrow" novalidate>
+  {% if form.non_field_errors %}<ul class="errors">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  <div class="grid-2">{% for field in form %}{% include "core/_field.html" %}{% endfor %}</div>
+  <button class="btn" type="submit">Check</button></form>
+
+{% if now %}
+<section class="section" style="margin-top:var(--s5)"><header><h2>{{ d.name }} · {{ d.amount|inr }}</h2></header>
+<div class="table-wrap"><table class="data"><thead><tr><th></th><th class="right">No purchase</th><th class="right">Buy on {{ d.date|idate_short }}</th><th class="right">Buy on {{ later|idate_short }}</th></tr></thead><tbody>
+  <tr><td>Lowest balance</td><td class="num right">{{ baseline.min_balance|inr }}</td><td class="num right {% if now.min_balance < 0 %}neg{% endif %}">{{ now.min_balance|inr }}</td><td class="num right {% if postponed.min_balance < 0 %}neg{% endif %}">{{ postponed.min_balance|inr }}</td></tr>
+  <tr><td>…on</td><td class="num right">{{ baseline.min_date|idate }}</td><td class="num right">{{ now.min_date|idate }}</td><td class="num right">{{ postponed.min_date|idate }}</td></tr>
+  <tr><td>Below your {{ baseline.buffer|inr0 }} buffer from</td><td class="num right">{{ baseline.first_below_buffer|idate }}</td><td class="num right">{{ now.first_below_buffer|idate }}</td><td class="num right">{{ postponed.first_below_buffer|idate }}</td></tr>
+  <tr><td>Goes below zero from</td><td class="num right">{{ baseline.first_shortfall|idate }}</td><td class="num right {% if now.first_shortfall %}neg{% endif %}">{{ now.first_shortfall|idate }}</td><td class="num right {% if postponed.first_shortfall %}neg{% endif %}">{{ postponed.first_shortfall|idate }}</td></tr>
+</tbody></table></div>
+<p style="margin-top:var(--s3)">
+{% if now.first_shortfall %}<strong class="neg">Buying on {{ d.date|idate }} would take your projected balance below zero on {{ now.first_shortfall|idate }}.</strong>
+{% elif now.first_below_buffer and not baseline.first_below_buffer %}<strong>Buying on {{ d.date|idate }} keeps you above zero but under your buffer from {{ now.first_below_buffer|idate }}.</strong>
+{% elif now.first_below_buffer %}<strong>Your balance is already under the buffer at some point, and this purchase makes it lower.</strong>
+{% else %}<strong>Based on recorded items, your balance stays above your buffer after this purchase.</strong>{% endif %}
+{% if postponed.first_shortfall %} Waiting until {{ later|idate }} still leaves a shortfall on {{ postponed.first_shortfall|idate }}.{% elif now.first_shortfall or now.first_below_buffer %} Waiting until {{ later|idate }} {% if postponed.first_below_buffer %}still dips under the buffer from {{ postponed.first_below_buffer|idate }}.{% else %}keeps you above the buffer.{% endif %}{% endif %}</p>
+<p class="help">Conservative scenario: only confirmed income is counted, and spending you have not recorded is not predicted. This is a check against your records, not a guarantee that the purchase is safe.</p>
+<div class="panel" style="margin-top:var(--s3)"><h3>Projected balance if you buy on {{ d.date|idate_short }}</h3>{% forecast_chart now %}</div></section>
+{% endif %}
+{% endblock %}

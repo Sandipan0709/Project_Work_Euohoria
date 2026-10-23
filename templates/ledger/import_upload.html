@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}
+{% block title %}Import CSV{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Import transactions</h1>
+<p>Upload a CSV exported from your bank or card statement. You choose the columns and review the result before anything is saved.</p></div>
+  <div class="actions"><a class="btn secondary" href="{% url 'import_history' %}">Import history</a></div></div>
+{% if not has_accounts %}
+<div class="empty"><p>Add the account these transactions belong to first.</p><a class="btn" href="{% url 'account_create' %}">Add account</a></div>
+{% else %}
+<form method="post" enctype="multipart/form-data" class="form-narrow" novalidate>{% csrf_token %}
+  {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+  <div class="actions"><button class="btn" type="submit">Upload and map columns</button></div>
+</form>
+<div class="note info" style="margin-top:var(--s5);max-width:560px"><strong>How duplicates are handled</strong>
+  <ul><li>Importing the same file twice adds nothing the second time.</li>
+  <li>Rows that match a transaction you entered by hand (same account, date, type and amount) are skipped.</li>
+  <li>Two identical rows inside one file are both kept, because they can be real purchases.</li></ul>
+  Files are limited to 2 MB and 5,000 rows. FinTrackr does not connect to banks or UPI.</div>
+{% endif %}
+{% endblock %}

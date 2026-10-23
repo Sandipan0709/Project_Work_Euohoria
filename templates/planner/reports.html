@@ -1,0 +1,43 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Reports</h1><p>{{ start|idate }} to {{ end|idate }}</p></div>
+  <div class="actions"><div class="tabs">{% for k, label in periods.items %}<a href="?period={{ k }}" {% if k == key %}aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}</div>
+    <a class="btn secondary" href="{% url 'reports_export' %}?period={{ key }}">Export CSV</a></div></div>
+
+{% if insights %}<section class="section"><header><h2>What the numbers say</h2></header>
+  {% for i in insights %}<div class="alert-row"><div><strong>{{ i.text }}</strong><span>Based on: {{ i.basis }}</span></div></div>{% endfor %}</section>{% endif %}
+
+<div class="band">
+  <div class="metric"><div class="label">Income</div><div class="value">{{ cmp.current.income|inr }}</div><div class="why">Previous period ({{ cmp.prev_start|idate_short }}–{{ cmp.prev_end|idate_short }}): {{ cmp.previous.income|inr0 }}</div></div>
+  <div class="metric"><div class="label">Spending</div><div class="value">{{ cmp.current.expenses|inr }}</div><div class="why">Previous period: {{ cmp.previous.expenses|inr0 }}</div></div>
+  <div class="metric"><div class="label">Saved</div><div class="value {% if cmp.current.savings < 0 %}neg{% endif %}">{{ cmp.current.savings|inr }}</div><div class="why">{% if cmp.current.savings_rate is not None %}{{ cmp.current.savings_rate }}% of income{% else %}No income recorded{% endif %}</div></div></div>
+
+<div class="cols even">
+  <section class="section"><header><h2>Income vs spending · 6 months</h2></header><div class="panel">{% income_expense_chart series %}
+    <div class="legend"><span><i style="background:var(--sky)"></i>Income</span><span><i style="background:var(--blue-700)"></i>Spending</span></div></div></section>
+  <section class="section"><header><h2>Spending by category</h2></header>
+    {% if categories %}<table class="data compact"><tbody>{% for c in categories %}<tr><td>{{ c.name }}</td><td style="width:35%"><div class="meter"><span style="width:{{ c.percent }}%"></span></div></td><td class="num right">{{ c.amount|inr }}</td><td class="num right muted">{{ c.percent }}%</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="muted small">No spending in this period.</p>{% endif %}</section>
+</div>
+
+<div class="cols even">
+  <section class="section"><header><h2>Top merchants</h2></header>
+    {% if merchants %}<table class="data compact"><tbody>{% for m in merchants %}<tr><td>{{ m.payee }}</td><td class="num right">{{ m.amount|inr }}</td></tr>{% endfor %}</tbody></table>{% else %}<p class="muted small">No payees recorded in this period.</p>{% endif %}</section>
+  <section class="section"><header><h2>Recurring bills</h2><span class="small muted">{{ recurring.annual_total|inr0 }} a year · {{ recurring.monthly_total|inr0 }} a month</span></header>
+    {% if recurring.rows %}<table class="data compact"><tbody>{% for r in recurring.rows %}<tr><td>{{ r.item.name }}{% if r.item.is_subscription %} <span class="kind">Subscription</span>{% endif %}</td><td class="num right">{{ r.annual|inr0 }}/yr</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="muted small">No recurring bills recorded.</p>{% endif %}</section>
+</div>
+
+<div class="cols even">
+  <section class="section"><header><h2>Budgets · current period</h2></header>
+    {% for s in budgets %}<div class="budget-row"><header><span>{{ s.budget.category|default:"Overall" }}</span><span class="num small">{{ s.spent|inr0 }} / {{ s.budget.amount|inr0 }}</span></header>
+      <div class="meter {{ s.state }}"><span style="width:{% if s.percent_used > 100 %}100{% else %}{{ s.percent_used }}{% endif %}%"></span></div></div>
+    {% empty %}<p class="muted small">No budgets set.</p>{% endfor %}</section>
+  <section class="section"><header><h2>Debt and goals</h2></header>
+    {% for d in debts %}<div class="budget-row"><header><span>{{ d.debt.name }}</span><span class="num small">{{ d.debt.outstanding|inr0 }} left of {{ d.debt.principal|inr0 }}</span></header><div class="meter"><span style="width:{{ d.paid_percent }}%"></span></div></div>{% endfor %}
+    {% for g in goals %}<div class="budget-row"><header><span>{{ g.goal.name }}</span><span class="num small">{{ g.saved|inr0 }} / {{ g.goal.target_amount|inr0 }}</span></header><div class="meter"><span style="width:{{ g.percent }}%"></span></div></div>{% endfor %}
+    {% if not debts and not goals %}<p class="muted small">No debts or goals yet.</p>{% endif %}</section>
+</div>
+{% endblock %}

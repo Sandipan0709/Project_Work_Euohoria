@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Goals{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Savings goals</h1><p>Contributions are tracked on each goal. They do not move money between accounts.</p></div>
+  <div class="actions"><a class="btn" href="{% url 'goal_create' %}">Add goal</a></div></div>
+{% for r in rows %}{% with g=r.goal p=r.p %}
+<section class="section">
+  <header><h2 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:var(--t-lg)">{{ g.name }} <span class="kind">{{ g.get_priority_display }} priority</span></h2>
+    <span class="small"><a href="{% url 'goal_update' g.id %}">Edit</a> · <a href="{% url 'goal_delete' g.id %}">Delete</a></span></header>
+  <div class="cols even">
+    <div><div class="actions" style="justify-content:space-between"><span class="num"><strong>{{ p.saved|inr }}</strong> of {{ g.target_amount|inr }}</span><span class="small muted">{{ p.progress_percent }}%</span></div>
+      <div class="meter {% if p.achieved %}{% elif p.on_track is False %}warn{% endif %}"><span style="width:{{ p.progress_percent }}%"></span></div>
+      <table class="data compact" style="margin-top:var(--s2)"><tbody>
+        {% if p.achieved %}<tr><td colspan="2"><span class="state done">Target reached</span></td></tr>{% else %}
+        <tr><td>Still to save</td><td class="num right">{{ p.remaining|inr }}</td></tr>
+        {% if g.target_date %}<tr><td>Target date</td><td class="num right">{{ g.target_date|idate }}</td></tr>
+        <tr><td>Needed per month to hit it</td><td class="num right">{% if p.required_monthly %}{{ p.required_monthly|inr }}{% else %}Date has passed{% endif %}</td></tr>{% endif %}
+        <tr><td>Estimated completion</td><td class="num right">{% if p.estimated_completion %}{{ p.estimated_completion|idate }}{% else %}—{% endif %}</td></tr>
+        {% if p.on_track is not None %}<tr><td>Status</td><td class="num right"><span class="state {% if p.on_track %}ok{% else %}warn{% endif %}">{% if p.on_track %}On track{% else %}Behind{% endif %}</span></td></tr>{% endif %}{% endif %}
+      </tbody></table>
+      <p class="help">{{ p.pace_basis }}</p></div>
+    <div><h3>Add a contribution</h3>
+      <form method="post" action="{% url 'goal_contribute' g.id %}" class="actions" style="align-items:end">{% csrf_token %}
+        <div class="field" style="margin:0"><label for="d{{ g.id }}">Date</label><input id="d{{ g.id }}" type="date" name="date" value="{{ r.form.initial.date|date:'Y-m-d' }}" required></div>
+        <div class="field" style="margin:0"><label for="a{{ g.id }}">Amount</label><input id="a{{ g.id }}" type="number" name="amount" min="0.01" step="0.01" required></div>
+        <button class="btn small" type="submit">Add</button></form></div>
+  </div></section>
+{% endwith %}{% empty %}
+<div class="empty"><p>No goals yet. Set a target amount and date to see what you need to save each month and whether you are on track.</p><a class="btn" href="{% url 'goal_create' %}">Add goal</a></div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "core/base.html" %}
+{% block title %}Delete transactions{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Delete {{ count }} transaction{{ count|pluralize }}?</h1></div>
+<form method="post" action="{% url 'transaction_bulk' %}" class="form-narrow">{% csrf_token %}
+  <p>Bill and debt payments among them will be reversed: the bill becomes due again and the debt balance is restored.</p>
+  <input type="hidden" name="action" value="delete"><input type="hidden" name="confirmed" value="yes"><input type="hidden" name="next" value="{{ next }}">
+  {% for i in ids %}<input type="hidden" name="ids" value="{{ i }}">{% endfor %}
+  <div class="actions"><button class="btn danger" type="submit">Delete {{ count }}</button><a class="btn secondary" href="{% url 'transaction_list' %}">Cancel</a></div>
+</form>
+{% endblock %}

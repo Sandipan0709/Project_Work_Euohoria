@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Notifications</h1><p>Bill reminders, budget thresholds, projected low balances, goal milestones and imports. Choose which you receive in Settings.</p></div>
+  {% if items %}<form method="post" action="{% url 'notification_read' %}">{% csrf_token %}<button class="btn secondary" type="submit">Mark all read</button></form>{% endif %}</div>
+{% if items %}
+<ul class="rows panel">
+  {% for n in items %}
+  <li><span>{% if not n.read_at %}<strong>{% endif %}{{ n.message }}{% if not n.read_at %}</strong>{% endif %}
+      <span class="sub">{{ n.get_kind_display }} · {{ n.created_at|date:"j M Y, H:i" }}</span></span>
+      <span class="actions">
+        {% if n.link_name %}<a href="{% url n.link_name %}">Open</a>{% endif %}
+        {% if not n.read_at %}<form method="post" action="{% url 'notification_read' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ n.id }}"><button class="linkbtn small" type="submit">Mark read</button></form>{% endif %}
+      </span></li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty"><p>Nothing to report. Alerts appear here when a bill is due, a budget nears its limit or the forecast dips below your buffer.</p></div>
+{% endif %}
+{% endblock %}

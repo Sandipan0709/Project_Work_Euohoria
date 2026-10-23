@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Avalanche vs snowball{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Avalanche vs snowball</h1><p>Pay every minimum EMI, then send extra money to one loan at a time. Avalanche targets the highest rate first, snowball the smallest balance first.</p></div>
+  <div class="actions"><a class="btn secondary" href="{% url 'debt_list' %}">Back to debt</a></div></div>
+{% if count < 2 %}<div class="empty"><p>Add at least two active loans to compare strategies.</p><a class="btn" href="{% url 'debt_create' %}">Add loan</a></div>
+{% else %}
+<form method="get" class="actions" style="align-items:end;margin-bottom:var(--s4)"><div class="field" style="margin:0"><label for="extra">Extra per month across all loans</label><input id="extra" type="number" name="extra" min="0" step="500" value="{{ extra|stringformat:'.0f' }}"></div><button class="btn secondary" type="submit">Compare</button></form>
+<div class="table-wrap"><table class="data"><thead><tr><th>Strategy</th><th class="right">Debt-free in</th><th>Date</th><th class="right">Total interest (est.)</th><th>Order cleared</th></tr></thead><tbody>
+{% for r in rows %}<tr><td><strong>{{ r.plan.strategy|capfirst }}</strong></td><td class="num right">{% if r.plan.months is None %}never{% else %}{{ r.plan.months }} months{% endif %}</td><td>{{ r.payoff|idate }}</td>
+  <td class="num right">{{ r.plan.total_interest|inr }}</td><td>{% for name, month in r.plan.closing_order %}{{ name }} (month {{ month }}){% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>{% endfor %}</tbody></table></div>
+<p class="help">Estimates only. Avalanche never costs more interest than snowball; snowball clears loans sooner, which some people find easier to stick with.</p>
+{% endif %}
+{% endblock %}

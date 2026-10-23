@@ -1,0 +1,100 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Overview</h1><p>{{ today|date:"l, j F Y" }}</p></div>
+  <div class="actions"><a class="btn" href="{% url 'transaction_create' %}">Add transaction</a><a class="btn secondary" href="{% url 'import_upload' %}">Import CSV</a></div>
+</div>
+
+{% if o.gaps %}
+<div class="note"><strong>The forecast may be incomplete.</strong>
+  <ul>{% for g in o.gaps %}<li>{{ g }}</li>{% endfor %}</ul>
+  <a href="{% url 'bill_list' %}">Add bills and income</a></div>
+{% endif %}
+
+<div class="band">
+  <div class="metric"><div class="label">Available to spend <span class="kind">Estimate</span></div>
+    <div class="value {% if o.available < 0 %}neg{% endif %}">{{ o.available|inr }}</div>
+    <div class="why">{{ o.position.liquid|inr }} in your accounts minus {{ o.obligations|inr }} of unpaid bills and EMIs due by {{ o.month_end|idate_short }}.</div></div>
+  <div class="metric"><div class="label">In your accounts <span class="kind actual">Actual</span></div>
+    <div class="value">{{ o.position.liquid|inr }}</div>
+    <div class="why">Cash, bank and wallet accounts, counting transactions up to today.</div></div>
+  <div class="metric"><div class="label">Projected month end <span class="kind">Estimate</span></div>
+    <div class="value {% if o.month_end_balance < 0 %}neg{% endif %}">{{ o.month_end_balance|inr }}</div>
+    <div class="why">Counts only confirmed income. <a href="{% url 'cashflow' %}">See assumptions</a></div></div>
+  <div class="metric"><div class="label">Net worth <span class="kind actual">Actual</span></div>
+    <div class="value {% if o.position.net_worth < 0 %}neg{% endif %}">{{ o.position.net_worth|inr }}</div>
+    <div class="why">Accounts{% if o.position.card_balance %} and cards ({{ o.position.card_balance|inr }}){% endif %} minus loans ({{ o.position.debts|inr }}).</div></div>
+</div>
+
+<div class="cols">
+  <div>
+    <section class="section">
+      <header><h2>Needs attention</h2></header>
+      {% for a in o.alerts %}
+        <div class="alert-row {{ a.level }}"><div><strong>{{ a.text }}</strong><span>{{ a.reason }}</span></div>
+          {% if a.link_name %}<a class="small" href="{% url a.link_name %}">{{ a.link_label }}</a>{% endif %}</div>
+      {% empty %}
+        <p class="muted small">No warnings. The next 30 days stay above your {{ o.forecast.buffer|inr0 }} buffer, based on what is recorded.</p>
+      {% endfor %}
+    </section>
+
+    <section class="section">
+      <header><h2>Next 30 days</h2><a class="small" href="{% url 'cashflow' %}">Open cash flow</a></header>
+      <div class="panel">{% forecast_chart o.forecast %}
+        <p class="small muted" style="margin:var(--s2) 0 0">Lowest point {{ o.forecast.min_balance|inr }} on {{ o.forecast.min_date|idate }}. Circles mark days with a bill, EMI or income.</p></div>
+    </section>
+
+    <section class="section">
+      <header><h2>Recent activity</h2><a class="small" href="{% url 'transaction_list' %}">All transactions</a></header>
+      {% if o.recent %}
+      <div class="table-wrap"><table class="data compact"><tbody>
+        {% for t in o.recent %}
+        <tr><td class="num">{{ t.date|idate_short }}</td>
+            <td>{{ t.payee|default:t.get_kind_display }}<span class="muted small"> · {{ t.account }}{% if t.category %} · {{ t.category }}{% endif %}</span></td>
+            <td class="num right {% if t.kind == 'expense' %}neg{% elif t.kind == 'income' or t.kind == 'refund' %}pos{% endif %}">{% if t.kind == 'expense' %}−{% elif t.kind == 'income' or t.kind == 'refund' %}+{% endif %}{{ t.amount|inr }}</td></tr>
+        {% endfor %}
+      </tbody></table></div>
+      {% else %}
+      <div class="empty"><p>No transactions yet. Add one, or import a bank statement to see where your money went.</p>
+        <a class="btn" href="{% url 'transaction_create' %}">Add transaction</a></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div>
+    <section class="section">
+      <header><h2>Coming up · 14 days</h2><a class="small" href="{% url 'bill_list' %}">Bills &amp; income</a></header>
+      {% if o.upcoming %}
+      <ul class="rows">{% for e in o.upcoming %}
+        <li><span>{{ e.label }}<span class="sub">{{ e.date|idate }}{% if e.source == 'income' and not e.certain %} · unconfirmed{% endif %}</span></span>
+            <span class="num {% if e.amount < 0 %}neg{% else %}pos{% endif %}">{{ e.amount|inr }}</span></li>
+      {% endfor %}</ul>
+      {% else %}<p class="muted small">Nothing scheduled in the next two weeks.</p>{% endif %}
+    </section>
+
+    <section class="section">
+      <header><h2>Budgets</h2><a class="small" href="{% url 'budget_list' %}">All budgets</a></header>
+      {% for s in o.budgets %}
+        <div class="budget-row"><header><span>{{ s.budget.category|default:"Overall" }}</span><span class="num small">{{ s.spent|inr0 }} of {{ s.budget.amount|inr0 }}</span></header>
+          <div class="meter {{ s.state }}"><span style="width:{% if s.percent_used > 100 %}100{% else %}{{ s.percent_used }}{% endif %}%"></span></div>
+          <span class="small muted">{% if s.remaining >= 0 %}{{ s.remaining|inr0 }} left{% else %}{{ s.remaining|absval|inr0 }} over{% endif %} · {{ s.budget.get_period_display }}</span></div>
+      {% empty %}
+        <p class="muted small">No budgets yet. <a href="{% url 'budget_create' %}">Set a monthly limit</a> to see your pace here.</p>
+      {% endfor %}
+    </section>
+
+    <section class="section">
+      <header><h2>This month</h2></header>
+      <table class="data compact"><tbody>
+        <tr><td>Income</td><td class="num right">{{ o.month_totals.income|inr }}</td><td class="num right muted">{{ o.previous_totals.income|inr0 }} last month</td></tr>
+        <tr><td>Spending</td><td class="num right">{{ o.month_totals.expenses|inr }}</td><td class="num right muted">{{ o.previous_totals.expenses|inr0 }} last month</td></tr>
+        <tr><td>Saved</td><td class="num right {% if o.month_totals.savings < 0 %}neg{% endif %}">{{ o.month_totals.savings|inr }}</td>
+            <td class="num right muted">{% if o.month_totals.savings_rate is not None %}{{ o.month_totals.savings_rate }}% of income{% else %}no income yet{% endif %}</td></tr>
+      </tbody></table>
+      <p class="help">Transfers between your accounts are not counted. Spending is net of refunds.</p>
+    </section>
+  </div>
+</div>
+{% endblock %}

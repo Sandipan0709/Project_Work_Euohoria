@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Settings</h1></div></div>
+<div class="cols even">
+  <section class="section">
+    <header><h2>Alerts and buffer</h2></header>
+    <form method="post" novalidate>{% csrf_token %}
+      {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+      <button class="btn" type="submit">Save preferences</button>
+    </form>
+  </section>
+  <section class="section">
+    <header><h2>Your data</h2></header>
+    <p class="small">Download everything stored for your account as JSON, or export transactions as CSV from the Transactions page.</p>
+    <p><a class="btn secondary" href="{% url 'export_data' %}">Download all my data (JSON)</a></p>
+    <header style="margin-top:var(--s5)"><h2>Delete account</h2></header>
+    <p class="small">Permanently removes your account, transactions, budgets, bills, debts and goals.</p>
+    <p><a class="btn danger" href="{% url 'delete_account' %}">Delete my account…</a></p>
+  </section>
+</div>
+{% endblock %}

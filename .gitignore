@@ -1,0 +1,30 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Databases and user data (never commit real financial records)
+*.sqlite3
+*.sqlite3-journal
+*.db
+*.dump
+*.sql
+media/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build output
+staticfiles/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

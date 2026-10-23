@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Accounts{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Accounts</h1><p>Balances include transactions up to today. Credit card balances are what you owe, shown as negative.</p></div>
+  <div class="actions"><a class="btn" href="{% url 'account_create' %}">Add account</a></div></div>
+{% if active %}
+<div class="table-wrap"><table class="data"><thead><tr><th>Account</th><th>Type</th><th class="right">Opening balance</th><th class="right">Balance today</th><th></th></tr></thead><tbody>
+{% for a, balance in active %}
+<tr><td>{{ a.name }}{% if a.notes %}<span class="muted small"> · {{ a.notes }}</span>{% endif %}</td><td>{{ a.get_kind_display }}</td>
+    <td class="num right">{{ a.opening_balance|inr }}</td><td class="num right {% if balance < 0 and a.is_liquid %}neg{% endif %}"><strong>{{ balance|inr }}</strong></td>
+    <td class="num"><a href="{% url 'account_update' a.id %}">Edit</a> ·
+      <form method="post" action="{% url 'account_archive' a.id %}" style="display:inline">{% csrf_token %}<button class="linkbtn" type="submit">Archive</button></form> ·
+      <a href="{% url 'account_delete' a.id %}">Delete</a></td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}<div class="empty"><p>No accounts yet.</p><a class="btn" href="{% url 'account_create' %}">Add account</a></div>{% endif %}
+{% if archived %}
+<section class="section" style="margin-top:var(--s5)"><header><h2>Archived</h2></header>
+<ul class="rows">{% for a, balance in archived %}<li><span>{{ a.name }}<span class="sub">{{ balance|inr }}</span></span>
+  <form method="post" action="{% url 'account_archive' a.id %}">{% csrf_token %}<button class="linkbtn" type="submit">Restore</button></form></li>{% endfor %}</ul></section>
+{% endif %}
+{% endblock %}

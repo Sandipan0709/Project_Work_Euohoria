@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Cash flow{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Cash flow</h1>
+  <p>Projected balance of {% if account %}{{ account.name }}{% else %}your cash, bank and wallet accounts{% endif %}, from recorded balances, bills, EMIs and expected income.</p></div>
+  <div class="actions">
+    <div class="tabs" role="group" aria-label="Horizon">{% for h in horizons %}<a href="?{% qs_with days=h %}" {% if h == days %}aria-current="true"{% endif %}>{{ h }} days</a>{% endfor %}</div>
+  </div></div>
+
+<form method="get" class="filters" style="max-width:720px">
+  <input type="hidden" name="days" value="{{ days }}">
+  <div class="field"><label for="scenario">Scenario</label>
+    <select id="scenario" name="scenario" onchange="this.form.submit()">
+      <option value="conservative" {% if scenario == 'conservative' %}selected{% endif %}>Conservative: confirmed income only</option>
+      <option value="expected" {% if scenario == 'expected' %}selected{% endif %}>Expected: all expected income</option></select></div>
+  <div class="field"><label for="account">Account</label>
+    <select id="account" name="account" onchange="this.form.submit()"><option value="">All cash, bank and wallet accounts</option>
+      {% for a in accounts %}<option value="{{ a.id }}" {% if account and account.id == a.id %}selected{% endif %}>{{ a.name }}</option>{% endfor %}</select></div>
+  <noscript><button class="btn small" type="submit">Apply</button></noscript>
+</form>
+
+{% if gaps %}<div class="note"><strong>This forecast is incomplete.</strong><ul>{% for g in gaps %}<li>{{ g }}</li>{% endfor %}</ul></div>{% endif %}
+
+<div class="band">
+  <div class="metric"><div class="label">Starting balance <span class="kind actual">Actual</span></div><div class="value">{{ f.opening|inr }}</div><div class="why">Today, {{ f.start|idate }}</div></div>
+  <div class="metric"><div class="label">Lowest point <span class="kind">Estimate</span></div><div class="value {% if f.min_balance < 0 %}neg{% endif %}">{{ f.min_balance|inr }}</div><div class="why">On {{ f.min_date|idate }}</div></div>
+  <div class="metric"><div class="label">Balance on {{ f.end|idate_short }} <span class="kind">Estimate</span></div><div class="value {% if f.end_balance < 0 %}neg{% endif %}">{{ f.end_balance|inr }}</div>
+    <div class="why">{{ other_scenario|capfirst }} scenario: {{ other_end|inr }}</div></div>
+  <div class="metric"><div class="label">Money in / out</div><div class="value" style="font-size:var(--t-lg)"><span class="pos">+{{ f.total_in|inr0 }}</span><br><span class="neg">−{{ f.total_out|inr0 }}</span></div><div class="why">Projected over {{ days }} days</div></div>
+</div>
+
+{% if f.first_shortfall %}<div class="alert-row danger"><div><strong>Balance goes below zero on {{ f.first_shortfall|idate }}.</strong><span>Move money, delay a payment, or record income you expect before then.</span></div></div>
+{% elif f.first_below_buffer %}<div class="alert-row warn"><div><strong>Balance falls below your {{ f.buffer|inr0 }} buffer on {{ f.first_below_buffer|idate }}.</strong><span>It stays above zero, with a lowest point of {{ f.min_balance|inr }}.</span></div></div>
+{% else %}<div class="alert-row"><div><strong>Stays above your {{ f.buffer|inr0 }} buffer for {{ days }} days.</strong><span>Based only on what is recorded.</span></div></div>{% endif %}
+
+<section class="section" style="margin-top:var(--s4)"><header><h2>Daily projected balance</h2></header>
+  <div class="panel">{% forecast_chart f %}</div></section>
+
+<div class="cols">
+  <section class="section"><header><h2>Events in this period</h2></header>
+    {% if rows %}
+    <div class="table-wrap"><table class="data compact"><thead><tr><th>Date</th><th>What</th><th class="right">Amount</th><th class="right">Balance after day</th></tr></thead><tbody>
+      {% for day, e, balance in rows %}<tr><td class="num">{{ day|idate }}</td><td>{{ e.label }}{% if e.source == 'income' and not e.certain %} <span class="kind">Unconfirmed</span>{% endif %}</td>
+        <td class="num right {% if e.amount < 0 %}neg{% else %}pos{% endif %}">{{ e.amount|inr }}</td><td class="num right {% if balance < 0 %}neg{% endif %}">{{ balance|inr }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="empty"><p>No bills, EMIs or income fall in this period, so the line is flat.</p><a class="btn" href="{% url 'bill_list' %}">Add bills and income</a></div>{% endif %}
+  </section>
+  <section class="section"><header><h2>How this is calculated</h2></header>
+    <ul class="small" style="padding-left:var(--s4);margin:0">{% for a in f.assumptions %}<li style="margin-bottom:var(--s2)">{{ a }}</li>{% endfor %}</ul>
+    <p class="help">A forecast is only as complete as your records. Unrecorded spending is not predicted.</p>
+  </section>
+</div>
+{% endblock %}

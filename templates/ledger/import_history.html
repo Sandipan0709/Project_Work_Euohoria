@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Import history{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Import history</h1></div><div class="actions"><a class="btn" href="{% url 'import_upload' %}">New import</a></div></div>
+{% if batches %}
+<div class="table-wrap"><table class="data"><thead><tr><th>When</th><th>File</th><th>Account</th><th class="right">Imported</th><th class="right">Duplicates</th><th class="right">Invalid</th></tr></thead><tbody>
+{% for b in batches %}<tr><td class="num">{{ b.created_at|date:"j M Y, H:i" }}</td><td>{{ b.filename }}</td><td>{{ b.account }}</td>
+  <td class="num right">{{ b.rows_imported }}</td><td class="num right">{{ b.rows_duplicate }}</td><td class="num right">{{ b.rows_invalid }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}<div class="empty"><p>No imports yet.</p><a class="btn" href="{% url 'import_upload' %}">Import a CSV</a></div>{% endif %}
+{% endblock %}

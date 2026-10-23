@@ -1,0 +1,25 @@
+{% extends "core/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ title }}</h1>
+<p>Expenses and income change your totals. A transfer only moves money between your own accounts. A refund reduces spending.</p></div></div>
+<form method="post" class="form-narrow" novalidate>{% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% if form.non_field_errors %}<ul class="errors" role="alert">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul><br>{% endif %}
+  {% include "core/_field.html" with field=form.kind %}
+  <div class="grid-2">
+    {% include "core/_field.html" with field=form.amount %}
+    {% include "core/_field.html" with field=form.date %}
+    {% include "core/_field.html" with field=form.account %}
+    {% include "core/_field.html" with field=form.to_account %}
+  </div>
+  {% include "core/_field.html" with field=form.category %}
+  {% include "core/_field.html" with field=form.payee %}
+  <div class="grid-2">
+    {% include "core/_field.html" with field=form.payment_method %}
+    {% include "core/_field.html" with field=form.tags %}
+  </div>
+  {% include "core/_field.html" with field=form.notes %}
+  <div class="actions"><button class="btn" type="submit">Save</button><a class="btn secondary" href="{% url 'transaction_list' %}">Cancel</a></div>
+</form>
+{% endblock %}

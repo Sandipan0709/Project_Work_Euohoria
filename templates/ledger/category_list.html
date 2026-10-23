@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Categories</h1><p>Mark categories as essential to see how much of your spending is essential versus discretionary.</p></div>
+  <div class="actions"><a class="btn" href="{% url 'category_create' %}">Add category</a></div></div>
+<div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Type</th><th>Essential</th><th></th></tr></thead><tbody>
+{% for parent, children in tree %}
+<tr><td><strong>{{ parent.name }}</strong></td><td>{{ parent.get_flow_display }}</td><td>{% if parent.is_essential %}Yes{% else %}No{% endif %}</td>
+  <td class="num"><a href="{% url 'category_update' parent.id %}">Edit</a> · <a href="{% url 'category_delete' parent.id %}">Delete</a></td></tr>
+{% for c in children %}
+<tr><td style="padding-left:var(--s6)">↳ {{ c.name }}</td><td>{{ c.get_flow_display }}</td><td>{% if c.is_essential %}Yes{% else %}No{% endif %}</td>
+  <td class="num"><a href="{% url 'category_update' c.id %}">Edit</a> · <a href="{% url 'category_delete' c.id %}">Delete</a></td></tr>
+{% endfor %}{% endfor %}
+</tbody></table></div>
+{% endblock %}

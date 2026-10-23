@@ -1,0 +1,19 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Debt{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Debt &amp; EMIs</h1><p>All payoff dates and interest figures are estimates calculated from the balance, rate and EMI you enter. They are not lender-confirmed.</p></div>
+  <div class="actions"><a class="btn" href="{% url 'debt_create' %}">Add loan</a>{% if rows|length > 1 %}<a class="btn secondary" href="{% url 'debt_compare' %}">Compare avalanche and snowball</a>{% endif %}</div></div>
+{% if rows %}
+<div class="band">
+  <div class="metric"><div class="label">Outstanding <span class="kind">Your figure</span></div><div class="value">{{ total_outstanding|inr }}</div></div>
+  <div class="metric"><div class="label">Monthly EMIs</div><div class="value">{{ total_emi|inr }}</div></div></div>
+<div class="table-wrap"><table class="data"><thead><tr><th>Loan</th><th class="right">Outstanding</th><th class="right">Rate</th><th class="right">EMI</th><th>Estimated payoff</th><th class="right">Interest left (est.)</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td><a href="{% url 'debt_detail' r.debt.id %}">{{ r.debt.name }}</a>{% if r.debt.lender %}<span class="muted small"> · {{ r.debt.lender }}</span>{% endif %}{% if r.debt.status == 'closed' %} <span class="kind">Closed</span>{% endif %}</td>
+  <td class="num right">{{ r.debt.outstanding|inr }}</td><td class="num right">{{ r.debt.annual_rate }}%</td><td class="num right">{{ r.debt.emi_amount|inr }}<br><span class="muted small">on the {{ r.debt.emi_day }}</span></td>
+  <td>{% if r.debt.status == 'closed' %}—{% elif r.plan.months is None %}<span class="neg">EMI does not cover interest</span>{% else %}{{ r.payoff|idate }} <span class="muted small">({{ r.plan.months }} months)</span>{% endif %}</td>
+  <td class="num right">{% if r.plan.months is not None %}{{ r.plan.total_interest|inr }}{% else %}—{% endif %}</td>
+  <td class="num"><a href="{% url 'debt_update' r.debt.id %}">Edit</a> · <a href="{% url 'debt_delete' r.debt.id %}">Delete</a></td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}<div class="empty"><p>No loans recorded. Add an EMI to see its payoff date, the interest left, and what extra payments would save. EMIs also appear in the cash-flow forecast.</p><a class="btn" href="{% url 'debt_create' %}">Add loan</a></div>{% endif %}
+{% endblock %}

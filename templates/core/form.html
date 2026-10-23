@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ title }}</h1>{% if intro %}<p>{{ intro }}</p>{% endif %}</div></div>
+<form method="post" class="form-narrow" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% if form.non_field_errors %}<ul class="errors" role="alert">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul><br>{% endif %}
+  {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+  <div class="actions"><button class="btn" type="submit">Save</button><a class="btn secondary" href="{% url back %}">Cancel</a></div>
+</form>
+{% endblock %}

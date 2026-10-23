@@ -1,0 +1,10 @@
+{% extends "core/base.html" %}
+{% block title %}Delete account{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Delete your account</h1></div>
+<form method="post" class="form-narrow" novalidate>{% csrf_token %}
+  <p>All of your financial records will be permanently deleted. Download your data first if you want a copy.</p>
+  {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+  <div class="actions"><button class="btn danger" type="submit">Delete everything</button><a class="btn secondary" href="{% url 'settings' %}">Cancel</a></div>
+</form>
+{% endblock %}

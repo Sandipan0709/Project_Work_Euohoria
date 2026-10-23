@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Budgets{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Budgets</h1><p>Planned versus actual spending. The dark tick on each bar shows how far through the period you are.</p></div>
+  <div class="actions"><a class="btn" href="{% url 'budget_create' %}">Add budget</a></div></div>
+<div class="cols">
+  <section class="section"><header><h2>Limits</h2></header>
+  {% for s in statuses %}
+    <div class="budget-row">
+      <header><strong>{{ s.budget.category|default:"Overall spending" }}</strong>
+        <span class="num"><strong>{{ s.spent|inr }}</strong> of {{ s.budget.amount|inr }}</span></header>
+      <div class="meter {{ s.state }}" role="img" aria-label="{{ s.percent_used }} percent used, {{ s.elapsed_percent }} percent of the period elapsed">
+        <span style="width:{% if s.percent_used > 100 %}100{% else %}{{ s.percent_used }}{% endif %}%"></span><i class="pace" style="left:{{ s.elapsed_percent }}%"></i></div>
+      <div class="actions small" style="justify-content:space-between">
+        <span><span class="state {{ s.state }}">{% if s.state == 'over' %}Over limit{% elif s.state == 'warn' %}Nearing limit{% else %}On track{% endif %}</span>
+          · {% if s.remaining >= 0 %}{{ s.remaining|inr }} left{% else %}{{ s.remaining|absval|inr }} over{% endif %} · {{ s.start|idate_short }}–{{ s.end|idate_short }}</span>
+        <span><a href="{% url 'budget_update' s.budget.id %}">Edit</a> · <a href="{% url 'budget_delete' s.budget.id %}">Delete</a></span></div>
+      <p class="help" style="margin:var(--s1) 0 0">
+        {% if s.projected_spend %}At this pace you will spend {{ s.projected_spend|inr0 }} this period{% if s.projected_spend > s.budget.amount %}, {{ s.projected_spend|inr0 }} against a {{ s.budget.amount|inr0 }} limit{% endif %}. {% else %}Not enough days yet to estimate your pace. {% endif %}
+        Previous period: {{ s.previous_spent|inr0 }}. Alert at {{ s.budget.warn_percent }}%.</p>
+    </div>
+  {% empty %}
+    <div class="empty"><p>No budgets yet. Start with an overall monthly limit, then add limits for the categories you want to watch.</p><a class="btn" href="{% url 'budget_create' %}">Add budget</a></div>
+  {% endfor %}
+  </section>
+  <section class="section"><header><h2>Essential vs discretionary · {{ month_start|date:"F" }}</h2></header>
+    <table class="data compact"><tbody>{% for name, amount in split.items %}<tr><td>{{ name }}</td><td class="num right">{{ amount|inr }}</td></tr>{% endfor %}</tbody></table>
+    <p class="help">Based on each category's essential flag. Edit categories to change the split. Weekly budgets run Monday to Sunday.</p>
+  </section>
+</div>
+{% endblock %}

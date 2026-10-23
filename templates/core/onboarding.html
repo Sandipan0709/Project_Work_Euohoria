@@ -1,0 +1,11 @@
+{% extends "core/base.html" %}
+{% block title %}Set up{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Set up your first account</h1>
+<p>FinTrackr starts from what you hold today, then adds what is coming up. You can add more accounts, bills and income afterwards.</p></div></div>
+<form method="post" class="form-narrow" novalidate>{% csrf_token %}
+  {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+  <div class="actions"><button class="btn" type="submit">Continue</button></div>
+</form>
+<p class="small muted" style="margin-top:var(--s5)">Prefer to start from a bank statement? Add the account first, then use <strong>Import CSV</strong>.</p>
+{% endblock %}

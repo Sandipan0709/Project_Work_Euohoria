@@ -1,0 +1,31 @@
+{% load static fin %}<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}FinTrackr{% endblock %} · FinTrackr</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230369A1'/%3E%3Cpath d='M6 17V11M12 17V7M18 17V13' stroke='%2338BDF8' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{% static 'css/fintrackr.css' %}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+{% if user.is_authenticated %}
+{% include "core/_nav_brand.html" with mobile=True %}
+<div class="shell">
+  <nav class="nav" aria-label="Main">
+    {% include "core/_nav_links.html" %}
+  </nav>
+  <main id="main">
+    {% if messages %}<ul class="messages" role="status">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+  <main id="main" class="auth">
+    {% if messages %}<ul class="messages" role="status">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% block auth %}{% endblock %}
+  </main>
+{% endif %}
+<script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}Review import{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Review import</h1><p>{{ filename }} · {{ row_count }} data row{{ row_count|pluralize }} into <strong>{{ account.name }}</strong></p></div>
+  <form method="post" action="{% url 'import_cancel' %}">{% csrf_token %}<button class="btn secondary" type="submit">Cancel import</button></form></div>
+<form method="post" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<ul class="errors" role="alert">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul><br>{% endif %}
+  <section class="section"><header><h2>1. Match your columns</h2></header>
+    <p class="small muted">Use one amount column, or separate debit and credit columns.</p>
+    <div class="grid-2" style="max-width:820px">
+      {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+    </div></section>
+  <div class="actions"><button class="btn secondary" type="submit" name="preview" value="1">Preview</button></div>
+
+  {% if report %}
+  <section class="section" style="margin-top:var(--s5)"><header><h2>2. Check the result</h2></header>
+    <div class="band" style="max-width:720px">
+      <div class="metric"><div class="label">Will import</div><div class="value">{{ report.counts.ok }}</div></div>
+      <div class="metric"><div class="label">Duplicates skipped</div><div class="value">{{ report.counts.duplicate }}</div></div>
+      <div class="metric"><div class="label">Invalid rows</div><div class="value {% if report.counts.invalid %}neg{% endif %}">{{ report.counts.invalid }}</div></div>
+    </div>
+    {% if invalid %}<h3>Rows with problems (not imported)</h3>
+    <div class="table-wrap"><table class="data compact"><thead><tr><th>File line</th><th>Problem</th></tr></thead><tbody>
+      {% for r in invalid %}<tr><td class="num">{{ r.line }}</td><td>{{ r.reason }}</td></tr>{% endfor %}</tbody></table></div><br>{% endif %}
+    {% if duplicates %}<h3>Duplicates (skipped)</h3>
+    <div class="table-wrap"><table class="data compact"><tbody>
+      {% for r in duplicates %}<tr><td class="num">line {{ r.line }}</td><td class="num">{{ r.date|idate }}</td><td>{{ r.payee }}</td><td class="num right">{{ r.amount|inr }}</td><td>{{ r.reason }}</td></tr>{% endfor %}</tbody></table></div><br>{% endif %}
+    {% if preview_ok %}<h3>First rows to import</h3>
+    <div class="table-wrap"><table class="data compact"><thead><tr><th>Date</th><th>Type</th><th>Payee</th><th>Category</th><th class="right">Amount</th></tr></thead><tbody>
+      {% for r in preview_ok %}<tr><td class="num">{{ r.date|idate }}</td><td>{{ r.kind|capfirst }}</td><td>{{ r.payee }}</td><td>{{ r.category_name|default:"—" }}</td><td class="num right">{{ r.amount|inr }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+    {% if report.counts.ok %}
+    <div class="actions" style="margin-top:var(--s4)"><button class="btn" type="submit" name="confirm" value="1">Import {{ report.counts.ok }} transaction{{ report.counts.ok|pluralize }}</button></div>
+    {% else %}<p class="muted">Nothing new to import with these settings.</p>{% endif %}
+  </section>
+  {% endif %}
+</form>
+{% endblock %}

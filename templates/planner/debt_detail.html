@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+{% load fin %}
+{% block title %}{{ debt.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ debt.name }}</h1><p>{{ debt.lender }}{% if debt.lender %} · {% endif %}{{ debt.annual_rate }}% a year · EMI {{ debt.emi_amount|inr }} on day {{ debt.emi_day }}</p></div>
+  <div class="actions"><a class="btn secondary" href="{% url 'debt_update' debt.id %}">Edit</a><a class="btn secondary" href="{% url 'debt_list' %}">All loans</a></div></div>
+<div class="band">
+  <div class="metric"><div class="label">Outstanding</div><div class="value">{{ debt.outstanding|inr }}</div><div class="why">Original {{ debt.principal|inr }}</div></div>
+  <div class="metric"><div class="label">Interest in the next EMI <span class="kind">Estimate</span></div><div class="value">{{ interest_this_month|inr }}</div><div class="why">One month at {{ debt.annual_rate }}%</div></div>
+  <div class="metric"><div class="label">Estimated payoff <span class="kind">Estimate</span></div><div class="value" style="font-size:var(--t-lg)">{% if base.plan.months is None %}Never at this EMI{% else %}{{ base.payoff|idate }}{% endif %}</div>
+    <div class="why">{% if base.plan.months is not None %}{{ base.plan.months }} months · {{ base.plan.total_interest|inr }} interest{% endif %}</div></div></div>
+<div class="cols even">
+  <section class="section"><header><h2>What if you pay extra?</h2></header>
+    <form method="get" class="actions" style="align-items:end"><div class="field" style="margin:0"><label for="extra">Extra each month</label><input id="extra" type="number" name="extra" min="0" step="100" value="{{ extra|stringformat:'.0f' }}"></div><button class="btn secondary" type="submit">Calculate</button></form>
+    {% if extra > 0 %}<table class="data compact" style="margin-top:var(--s3)"><thead><tr><th></th><th class="right">Current EMI</th><th class="right">With {{ extra|inr0 }} extra</th></tr></thead><tbody>
+      <tr><td>Months to pay off</td><td class="num right">{{ base.plan.months|default_if_none:"never" }}</td><td class="num right">{{ scenario.plan.months|default_if_none:"never" }}</td></tr>
+      <tr><td>Payoff date</td><td class="num right">{{ base.payoff|idate }}</td><td class="num right">{{ scenario.payoff|idate }}</td></tr>
+      <tr><td>Total interest</td><td class="num right">{{ base.plan.total_interest|inr }}</td><td class="num right">{{ scenario.plan.total_interest|inr }}</td></tr></tbody></table>
+    <p class="help">Assumes prepayments reduce the balance immediately with no lender penalty. Check your loan terms.</p>{% endif %}
+  </section>
+  <section class="section"><header><h2>Record a payment</h2></header>
+    <form method="post" novalidate>{% csrf_token %}
+      {% if form.non_field_errors %}<ul class="errors" role="alert">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      {% for field in form %}{% include "core/_field.html" %}{% endfor %}
+      <button class="btn" type="submit">Record payment</button></form>
+    <p class="help">Creates an expense in the chosen account and reduces the balance by the estimated principal part (payment minus one month of interest). Replace the balance with your lender's figure whenever you have it.</p>
+  </section></div>
+<section class="section"><header><h2>Payment history</h2></header>
+{% if payments %}<div class="table-wrap"><table class="data compact"><thead><tr><th>Date</th><th class="right">Paid</th><th class="right">Principal (est.)</th></tr></thead><tbody>
+{% for p in payments %}<tr><td class="num">{{ p.date|idate }}</td><td class="num right">{{ p.amount|inr }}</td><td class="num right">{{ p.principal_part|inr }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted small">No payments recorded yet.</p>{% endif %}</section>
+{% endblock %}
